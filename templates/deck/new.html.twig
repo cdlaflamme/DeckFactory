@@ -2,8 +2,11 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-<h1> Flyingcodfish's TTS MTG Deck Factory™<sup><sup>(not really)</sup></sup></h1>
-<div> Welcome back. :^) </div>
 
-<div>{{ form(form, {'width': '50%'}) }}</div>
+<section>
+    <h1 class="title"> Flyingcodfish's TTS MTG Deck Factory™<sup><sup>(not really)</sup></sup></h1>
+    <div class="content"> Welcome back. :^) </div>
+</section>
+
+<div class="form">{{ form(form) }}</div>
 {% endblock %}

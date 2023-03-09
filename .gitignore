@@ -1,3 +1,8 @@
+# Deck files
+/assets/python/*.json
+
+#IDE files
+.idea/
 
 ###> symfony/framework-bundle ###
 /.env.local
@@ -20,4 +25,3 @@
 ###< symfony/phpunit-bridge ###
 
 
-/assets/python/*.json

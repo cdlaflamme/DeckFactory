@@ -8,12 +8,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: DeckRepository::class)]
 class Deck
 {
-	
-	// Constants for card sizes.
-	public const CARD_SIZE_SMALL  = 0;
-	public const CARD_SIZE_MEDIUM = 1;
-	public const CARD_SIZE_LARGE  = 2;
-	
+
+    // Constants for card sizes.
+    public const CARD_SIZE_SMALL  = 0;
+    public const CARD_SIZE_MEDIUM = 1;
+    public const CARD_SIZE_LARGE  = 2;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -30,6 +30,23 @@ class Deck
 
     #[ORM\Column(length: 255)]
     private ?string $localFilename = null; //local filename; based on a uid
+
+    // Not a column
+    protected int $imageSize;
+
+    /**
+     * @return int
+     */
+    public function getImageSize(): int {
+        return $this->imageSize;
+    }
+
+    /**
+     * @param int $imageSize
+     */
+    public function setImageSize( int $imageSize ): void {
+        $this->imageSize = $imageSize;
+    }
 
     public function getId(): ?int
     {
@@ -77,26 +94,26 @@ class Deck
         return $this->localFilename;
     }
 
-	public function getFinalFilename(): string
-	{
-		return $this->cleanFilename($this->getName()).'.json';
-	}
-	
-	private function cleanFilename() : string
-	{
-		// Clean up the name (pls don't relative path me user-san)
-		// from https://www.codexworld.com/how-to/clean-up-filename-string-to-make-url-and-filename-safe-using-php/
-		$cleanName = pathinfo($name, PATHINFO_FILENAME); 
-		// 1. Replaces all spaces with hyphens. 
-		$cleanName = str_replace(' ', '-', $cleanName); 
-		// 2. Removes special chars. 
-		$cleanName = preg_replace('/[^A-Za-z0-9\-\_]/', '', $cleanName); 
-		// 3. Replaces multiple hyphens with single one. 
-		$cleanName = preg_replace('/-+/', '-', $cleanName); 
-		 
-		$this->name = $cleanName;	
-	}
-	
+    public function getFinalFilename(): string
+    {
+        return $this->cleanFilename($this->getName()).'.json';
+    }
+
+    private function cleanFilename() : string
+    {
+        // Clean up the name (pls don't relative path me user-san)
+        // from https://www.codexworld.com/how-to/clean-up-filename-string-to-make-url-and-filename-safe-using-php/
+        $cleanName = pathinfo($name, PATHINFO_FILENAME);
+        // 1. Replaces all spaces with hyphens.
+        $cleanName = str_replace(' ', '-', $cleanName);
+        // 2. Removes special chars.
+        $cleanName = preg_replace('/[^A-Za-z0-9\-\_]/', '', $cleanName);
+        // 3. Replaces multiple hyphens with single one.
+        $cleanName = preg_replace('/-+/', '-', $cleanName);
+
+        $this->name = $cleanName;
+    }
+
     public function setLocalFilename(string $localFilename): self
     {
         $this->localFilename = $localFilename;

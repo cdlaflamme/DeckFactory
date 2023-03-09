@@ -6,7 +6,7 @@
 {% block body %}
 <div><h2> Deck submitted...</h2></div>
 <script>
-  
+
   $.ajax({
     type: "GET",
     url: "{{ path('/ajax/deck/{{ deckId }}') }}",
@@ -23,7 +23,7 @@
 				// At this point we know that the server response
 				// is what we were expecting,
 				// so retrive the response and use if
-			
+
 				if (typeof data.message != "undefined" && data.message != "undefined")
 				{
 					// Do whatever you need with data.message
@@ -31,6 +31,6 @@
 			}
 		}
 	});
-  
+
 </script>
 {% endblock %}
