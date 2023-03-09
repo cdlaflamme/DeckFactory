@@ -23,29 +23,44 @@ env = {
 }
 
 # ====== constants =============
-API_KEY = env['PTCG_SDK_API_KEY']
+if 'PTCG_SDK_API_KEY' in env.keys():
+    API_KEY = env['PTCG_SDK_API_KEY']
+else:
+    API_KEY = None
 POLITENESS_DELAY = 0.1 #scryfall has nicely asked me to wait 100ms between requests; ill do the same for pokemontcg
 X_SPACE =  2.5  #padding between decks in the X direction, in unknown units. experimentally determined to be a good value
 DEFAULT_BACK_URL = 'https://images.pokemoncard.io/images/assets/CardBack.jpg'
 
 # Card ids for basic energy; ptcgo export doesn't specify basic energy sets so I'm hardcoding call of legends because I like celebi
-BASIC_ENERGY = {
-    'Darkness': 'col1-86',
-    'Metal':    'col1-87',
+# Maps card names in the decklist to card ids
+BASIC_ENERGY_IDS = {
     'Grass':    'col1-88',
     'Fire':     'col1-89',
     'Water':    'col1-90',
     'Lightning':'col1-91',
     'Psychic':  'col1-92',
     'Fighting': 'col1-93',
-    'Basic {D} Energy':      'col1-86',
-    'Basic {M} Energy':      'col1-87',
+    'Darkness': 'col1-94',
+    'Metal':    'col1-95',
     'Basic {G} Energy':      'col1-88',
     'Basic {F} Energy':      'col1-89',
     'Basic {W} Energy':      'col1-90',
     'Basic {L} Energy':      'col1-91',
     'Basic {P} Energy':      'col1-92',
-    'Basic {F} Energy':      'col1-93'
+    'Basic {F} Energy':      'col1-93',
+    'Basic {D} Energy':      'col1-94',
+    'Basic {M} Energy':      'col1-95'
+}
+# Maps card ids to a consistent card name for TTS
+BASIC_ENERGY_NAMES = {
+    'col1-88': 'Grass Energy',
+    'col1-89': 'Fire Energy',
+    'col1-90': 'Water Energy',
+    'col1-91': 'Lightning Energy',
+    'col1-92': 'Psychic Energy',
+    'col1-93': 'Fighting Energy',
+    'col1-94': 'Darkness Energy',
+    'col1-95': 'Metal Energy'
 }
 
 def main():
@@ -104,7 +119,11 @@ def printSkipWarning(s):
 
 def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
     # ====== setup ==============    
-    tcg.RestClient.configure(API_KEY)
+    if API_KEY is None:
+        print("NOTICE: Operating without an API KEY. This is normal if you're using this tool on your own. You are limited to 30 API calls per minute, which may lead to errors if you have a deck with many unique cards.")
+        print("\tIf you really need to, you can reduce the number of API calls by overriding card URLs: add 'OVERRIDE https://url-to-card-image' to the end of a line in the decklist.")
+    else:
+        tcg.RestClient.configure(API_KEY)
     
     if OUT_PATH[-5:].lower() != '.json':
         OUT_PATH = OUT_PATH+'.json'
@@ -142,6 +161,7 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
         card['set_code']    = match.group(3)
         card['number']      = match.group(4)
         card['image']       = None
+        card['valid']       = True # Starts as true, set to false if we can't resolve the card
 
         # Check for image override
         override = match.group(5)
@@ -154,8 +174,6 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
         cards.append(card)
     
     # ====== get card images ==============
-    #get front and back images for all card names. 'main' deck has the front face of all cards, and gives them a static back. 'double' deck has only double-sided cards, and includes both sides.
-    #this code is EVIL because if you're running 24 islands it will make scryfall api calls 24 times, once for each island. this is unnecessary and wasteful but I just want it to work at the moment
     image_urls = []
     print("Using PokemonTCG API to get card image URLs...")
     num_main_cards = len(cards)
@@ -181,13 +199,14 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
             except:
                 print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"'. Could not resolve set name.")
                 printSkipWarning(name)
+                card['valid'] = False
                 continue
         # Otherwise, get the set ID to assemble a unique card ID
         else:
             #If the set_code is 'Energy', the deck just wants basic energy and does not specify a set. Use hardcoded id
             if set_code == 'Energy':
-                card_id = BASIC_ENERGY[card['name']] #map basic energy using a hardcoded card id
-                if 'Energy' not in name: card['name'] = card['name'] + ' Energy'
+                card_id = BASIC_ENERGY_IDS[card['name']] #map basic energy using a hardcoded card id
+                card['name'] = BASIC_ENERGY_NAMES[card_id]
             # Otherwise, try to get the set ID
             else:
                 try:
@@ -195,6 +214,7 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
                 except:
                     print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"'. Could not resolve set name.")
                     printSkipWarning(name)
+                    card['valid'] = False
                     continue
                 card_id = set_id+'-'+number
             
@@ -204,6 +224,7 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
             except:
                 print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"', id '"+card_id+"'. Could not resolve card.")
                 printSkipWarning(name)
+                card['valid'] = False
                 continue
         
         # We have a result from the API; record one of the image URLs
@@ -218,10 +239,17 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
     # ====== Convert card array to quantity-ignorant url array
     urls = []
     names = []
+    hint_printed = False
     for card in cards:
-        for i in range(card['quantity']):
-            urls.append(card['image'])
-            names.append(card['name'])
+        if card['valid']:
+            for i in range(card['quantity']):
+                urls.append(card['image'])
+                names.append(card['name'])
+        elif hint_printed == False:
+            print('\n\nHINT: Some cards had to be skipped, so the final product will be missing some cards.\n'\
+                    +'You can try to troubleshoot the issue (usually a weird set name from PTCGO), or manually add an override by adding "OVERRIDE https://url-to-card-image" to the end of the line.\n\n'\
+            )
+            hint_printed = True
     
     # ====== Assemble TTS object ==============
     print("Assembling output JSON file...")
