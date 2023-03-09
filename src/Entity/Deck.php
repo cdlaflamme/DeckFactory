@@ -10,43 +10,29 @@ class Deck
 {
 
     // Constants for card sizes.
-    public const CARD_SIZE_SMALL  = 0;
-    public const CARD_SIZE_MEDIUM = 1;
-    public const CARD_SIZE_LARGE  = 2;
+    public const CARD_SIZE_SMALL  = 'small';
+    public const CARD_SIZE_MEDIUM = 'medium';
+    public const CARD_SIZE_LARGE  = 'large';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null; //deck id in DB
+    private ?int $id = null; // Deck id in DB
 
     #[ORM\Column(length: 255)]
-    private ?string $listUrl = null; //tapedout url
+    private ?string $listUrl = null; // TappedOut url
 
     #[ORM\Column(length: 255)]
     private ?string $name = null; //name of deck; displayed on pages & used in filename
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $backUrl = null; //custom cardback url
+    private ?string $backUrl = null; // Custom card back url
 
-    #[ORM\Column(length: 255)]
-    private ?string $localFilename = null; //local filename; based on a uid
+    #[ORM\Column(length: 32)]
+    private ?string $uid = null;
 
-    // Not a column
-    protected int $imageSize;
-
-    /**
-     * @return int
-     */
-    public function getImageSize(): int {
-        return $this->imageSize;
-    }
-
-    /**
-     * @param int $imageSize
-     */
-    public function setImageSize( int $imageSize ): void {
-        $this->imageSize = $imageSize;
-    }
+    #[ORM\Column]
+    private ?int $jobStatus = null;
 
     public function getId(): ?int
     {
@@ -91,7 +77,7 @@ class Deck
 
     public function getLocalFilename(): ?string
     {
-        return $this->localFilename;
+        return 'generated/decks/'.$this->uid.'.json';
     }
 
     public function getFinalFilename(): string
@@ -99,7 +85,12 @@ class Deck
         return $this->cleanFilename($this->getName()).'.json';
     }
 
-    private function cleanFilename() : string
+    /**
+     * @param string $name
+     *
+     * @return string
+     */
+    private function cleanFilename(string $name) : string
     {
         // Clean up the name (pls don't relative path me user-san)
         // from https://www.codexworld.com/how-to/clean-up-filename-string-to-make-url-and-filename-safe-using-php/
@@ -114,9 +105,26 @@ class Deck
         $this->name = $cleanName;
     }
 
-    public function setLocalFilename(string $localFilename): self
+    public function getUid(): ?string
     {
-        $this->localFilename = $localFilename;
+        return $this->uid;
+    }
+
+    public function setUid(string $uid): self
+    {
+        $this->uid = $uid;
+
+        return $this;
+    }
+
+    public function getJobStatus(): ?int
+    {
+        return $this->jobStatus;
+    }
+
+    public function setJobStatus(int $jobStatus): self
+    {
+        $this->jobStatus = $jobStatus;
 
         return $this;
     }

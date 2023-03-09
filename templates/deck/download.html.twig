@@ -1,0 +1,57 @@
+{# templates/deck/download.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}TTS Deck Factory{% endblock %}
+
+{% block body %}
+	<div class="title"><h3>Downloading "{{ deck.name }}.json"...</h3></div>
+	<div class="content">
+		<p>
+			The first time you download this deck, you'll need to wait about a second per card for the file to be prepared.
+		</p>
+		<p>
+			You're on the shiny new site, so you can refresh this page without causing any problems,
+			and you may revisit this page to download your deck again without waiting (until the admin cleans up at an arbitrary time).
+		</p>
+		<p>
+			While you're waiting, you may as well check that the provided information is correct (links open in new tab).
+		</p>
+		<p>
+			Decklist URL: <a href="{{ deck.listUrl }}" target="_blank">{{ deck.name }}</a> <br>
+			Cardback:
+			{% if deck.backUrl %}
+				<a href="{{ deck.backUrl }}" target=\"_blank\">{{ deck.backUrl }}</a>
+			{% else %}
+				[Default]
+			{% endif %}
+		</p>
+	</div>
+{#<script>#}
+
+  {#$.ajax({#}
+  {#  type: "GET",#}
+  {#  url: "{{ path('/ajax/deck/{{ deckId }}') }}",#}
+  {#  data: {deck_id: deck_id}#}
+	{#})#}
+	{#.done(function(data){#}
+
+	{#	if (typeof data.status != "undefined" && data.status != "undefined")#}
+	{#	{#}
+	{#		// At this point we know that the status is defined,#}
+	{#		// so we need to check for its value ("OK" in my case)#}
+	{#		if (data.status == "OK")#}
+	{#		{#}
+	{#			// At this point we know that the server response#}
+	{#			// is what we were expecting,#}
+	{#			// so retrive the response and use if#}
+
+	{#			if (typeof data.message != "undefined" && data.message != "undefined")#}
+	{#			{#}
+	{#				// Do whatever you need with data.message#}
+	{#			}#}
+	{#		}#}
+	{#	}#}
+	{#});#}
+
+{#</script>#}
+{% endblock %}

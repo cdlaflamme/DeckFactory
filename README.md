@@ -12,7 +12,7 @@ At the moment, Magic the Gathering lists can be parsed from Tappedout, and Pokem
 ### Usage
 
 The python files in ```assets/python/``` can be used via the command line if one wishes.
-One must install Python3 and install dependencies for whatever tool is being used (they are listed in the source code, and are all obtainable with pip).
+One must install Python 3.8 or higher and install dependencies for whatever tool is being used (they are listed in the source code, and are all obtainable with pip).
 Each tool also has usage hints in the source that are printed when they're run with invalid arguments.
 
 ## Website
