@@ -1,0 +1,30 @@
+Pokemon - 18
+1 Oranguru SSH 148
+1 Radiant Greninja ASR 46
+1 Drapion V LOR 118
+1 Snorlax LOR 143
+2 Cramorant LOR 50
+2 Sableye LOR 70
+3 Comfey LOR 79
+2 Bagon EVS 107
+2 Shelgon EVS 108
+2 Salamence EVS 109
+1 Manaphy BRS 41
+Trainer - 31
+1 Air Balloon SSH 156
+2 Ordinary Rod SSH 171
+2 Switch Cart ASR 154
+2 Temple of Sinnoh ASR 155
+4 Colress's Experiment LOR 155
+4 Mirage Gate LOR 163
+1 Ultra Ball CRZ 146
+4 Scoop Up Net RCL 165
+2 Boost Shake EVS 142
+3 Battle VIP Pass FST 225
+2 Boss's Orders BRS 132
+2 Choice Belt BRS 135
+2 Ultra Ball BRS 150
+Energy - 11
+4 Fire Energy 2
+4 Water Energy 3
+3 Psychic Energy 5

@@ -13,7 +13,7 @@ class DeckType extends AbstractType
 	public function buildForm(FormBuilderInterface $builder, array $options)
 	{
 		$builder
-			->add('deckListUrl', BaseType\TextType::class, [
+			->add('listUrl', BaseType\TextType::class, [
 				'label' => 'Tappedout URL',
 				'required' => true,
 				'row_attr' => [
@@ -41,6 +41,7 @@ class DeckType extends AbstractType
 					'Medium' => Deck::CARD_SIZE_MEDIUM,
 					'Large (Default)' => Deck::CARD_SIZE_LARGE,
 				],
+				'mapped' => false,
 				'empty_data' => Deck::CARD_SIZE_LARGE,
 				'row_attr' => [
 					'class' => 'form-floating',

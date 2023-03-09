@@ -1,0 +1,24 @@
+Pokemon - 21
+1 Galarian Mr. Rime V ASR 49
+1 Archen SIT 146
+1 Archeops SIT 147
+4 Mew V CRZ 60
+4 Mew VMAX FST 114
+4 Genesect V FST 185
+2 Smeargle FST 209
+1 Oricorio FST 42
+3 Oricorio PR-SW 210
+Trainer - 25
+4 Missing Clover UPR 129
+2 Lady FLI 109
+1 Unidentified Fossil SIT 165
+2 Adventurer's Discovery FST 224
+4 Chili & Cilan & Cress FST 227
+4 Elesa's Sparkle FST 233
+4 Power Tablet FST 236
+4 Special Charge STS 105
+Energy - 14
+5 Psychic Energy 5
+2 Metal Energy 8
+3 Unit Energy LightningPsychicMetal UPR 138
+4 Fusion Strike Energy FST 244

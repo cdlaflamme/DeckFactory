@@ -1,0 +1,29 @@
+Pokémon: 7
+3 Comfey LOR 79
+1 Cramorant LOR 50
+1 Drapion V LOR 118
+3 Hisuian Goodra V LOR 135
+1 Comfey PR-SW 242
+1 Radiant Greninja ASR 46
+3 Hisuian Goodra VSTAR LOR 136
+
+Trainer: 12
+1 Ordinary Rod SSH 171
+3 Boss's Orders SHF 58
+3 Escape Rope BST 125
+1 Energy Recycler BST 124
+4 Mirage Gate LOR 163
+3 Switch CRZ 144 PH
+4 Scoop Up Net RCL 165
+4 Temple of Sinnoh ASR 155
+4 Battle VIP Pass FST 225
+4 Colress's Experiment LOR 155
+2 Marnie SSH 169
+2 Choice Belt BRS 135
+
+Energy: 3
+4 Basic {M} Energy Energy 16
+4 Basic {W} Energy Energy 11
+4 Capture Energy RCL 171
+
+Total Cards: 60

@@ -1,0 +1,24 @@
+Pokemon - 15
+1 Radiant Venusaur PGO 4
+3 Baltoy SIT 93
+3 Claydol SIT 94
+3 Riolu BRS 78
+3 Lucario BRS 79
+2 Oranguru BRS 12
+Trainer - 33
+2 PokéStop PGO 68
+3 Evolution Incense SSH 163
+2 Ordinary Rod SSH 171
+3 Quick Ball SSH 179
+2 Switch SSH 183
+4 Gutsy Pickaxe ASR 145
+1 Hisuian Heavy Ball ASR 146
+2 Temple of Sinnoh ASR 155
+4 Trekking Shoes ASR 156
+1 Escape Rope BST 125
+1 Path to the Peak CRE 148
+4 Battle VIP Pass FST 225
+2 Choice Belt BRS 135
+2 Ultra Ball BRS 150
+Energy - 12
+12 Fighting Energy 6

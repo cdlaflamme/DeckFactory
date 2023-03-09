@@ -1,0 +1,30 @@
+Pokémon: 8
+2 Dialga CEL 20
+2 Galarian Perrserker SSH 128
+3 Galarian Meowth RCL 126
+1 Zamazenta CRZ 97 PH
+3 Mew CRZ-GG 10
+1 Radiant Greninja ASR 46
+1 Zamazenta CRZ 97
+2 Zacian CRZ 94
+
+Trainer: 14
+4 Battle VIP Pass FST 225
+4 Professor's Research CEL 23
+1 Boss's Orders SWSHALT 73
+3 Pokégear 3.0 SSH 174
+1 Ordinary Rod SSH 171
+4 Metal Saucer SSH 170
+2 Raihan CRZ 140
+1 Air Balloon SSH 156
+4 Quick Ball SSH 179
+2 Energy Search SSH 161
+2 Marnie SSH 169
+2 Choice Belt BRS 135
+4 Scoop Up Net RCL 165
+1 Boss's Orders BRS 132
+
+Energy: 1
+10 Basic {M} Energy Energy 16
+
+Total Cards: 60
