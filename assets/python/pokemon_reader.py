@@ -1,23 +1,34 @@
 #pokemon_reader.py
 #encoding: utf-8
 
-#given a pokemon deck text file path, reads the cards in the deck, and creates a JSON file that can represent the deck in Tabletop Simulator.
-#Creates seperate decks for tokens and double faced-versions of double-faced cards (if needed).
-#Does not currently allow for the printing to be selected. TODO determine which printing is used
+# Given a pokemon deck text file path, reads the cards in the deck, and creates a JSON file that can represent the deck in Tabletop Simulator.
+
+# Dependencies:
+#   pokemontcgsdk
+#   python-dotenv
 
 # ======= imports ============
+from dotenv import dotenv_values
 import pokemontcgsdk as tcg
+import os
 import re #regex
 import time #for sleeping to be polite
 import sys #command line arguments
 
+# ===== Load environment values ===
+env = {
+    **dotenv_values('../../.env'),
+    **dotenv_values('../../.env.local'),
+    **os.environ
+}
+
 # ====== constants =============
-API_KEY = '741b9f2c-5344-4e50-8acd-72186cffc6bf' #please don't post or share this anywhere
+API_KEY = env['PTCG_SDK_API_KEY']
 POLITENESS_DELAY = 0.1 #scryfall has nicely asked me to wait 100ms between requests; ill do the same for pokemontcg
 X_SPACE =  2.5  #padding between decks in the X direction, in unknown units. experimentally determined to be a good value
 DEFAULT_BACK_URL = 'https://images.pokemoncard.io/images/assets/CardBack.jpg'
 
-#card ids for basic energy; ptcgo export doesn't specify basic energy ids
+# Card ids for basic energy; ptcgo export doesn't specify basic energy sets so I'm hardcoding call of legends because I like celebi
 BASIC_ENERGY = {
     'Darkness': 'col1-86',
     'Metal':    'col1-87',
@@ -26,7 +37,15 @@ BASIC_ENERGY = {
     'Water':    'col1-90',
     'Lightning':'col1-91',
     'Psychic':  'col1-92',
-    'Fighting': 'col1-93'
+    'Fighting': 'col1-93',
+    'Basic {D} Energy':      'col1-86',
+    'Basic {M} Energy':      'col1-87',
+    'Basic {G} Energy':      'col1-88',
+    'Basic {F} Energy':      'col1-89',
+    'Basic {W} Energy':      'col1-90',
+    'Basic {L} Energy':      'col1-91',
+    'Basic {P} Energy':      'col1-92',
+    'Basic {F} Energy':      'col1-93'
 }
 
 def main():
@@ -80,8 +99,6 @@ def main():
     createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE)
 
 
-#TODO find usages of this and fix header, also use it in more places (trying to skip not crash on err)
-#TODO also accomodate {M} energy format
 def printSkipWarning(s):
     print("NOTICE: Skipping "+s)
 
@@ -107,20 +124,33 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
         print("ERROR: Could not open input file: '"+IN_PATH+"'. It may not exist at the specified location, or might be write protected.")
         return
     
+    # Loop through each line
     cards = []
-    lines = file_content.split('\n')
+    lines = file_content.split('\n')   
     for i,line in enumerate(lines):
-        line_regex = '(\d+) (.*) ([A-Z\-]+) (\d+)'
+        # Identify card features
+        line_regex = '(\d+) (.+) ([A-Za-z\-]+) (\d+)\s*([A-Z]*)\s*(.*)'
         match = re.match(line_regex, line)
         if match is None:
-            printSkipWarning(line)
+            if line != '': printSkipWarning('Line "'+line+'"')
             continue
+        
+        # Create card entry
         card = {}
-        card['quantity'] = match.group(1)
-        card['name']     = match.group(2)
-        card['set']      = match.group(3)
-        card['id']       = match.group(4)
-        card['image']    = None
+        card['quantity']    = int(match.group(1))
+        card['name']        = match.group(2)
+        card['set_code']    = match.group(3)
+        card['number']      = match.group(4)
+        card['image']       = None
+
+        # Check for image override
+        override = match.group(5)
+        override_url = match.group(6)
+        if override == 'OVERRIDE' and override_url != '':
+            print('OVERRIDE: Accepting override for '+card['name']+' '+card['set_code']+": "+override_url)
+            card['image'] = override_url
+
+        # Add card to list for processing
         cards.append(card)
     
     # ====== get card images ==============
@@ -130,53 +160,56 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
     print("Using PokemonTCG API to get card image URLs...")
     num_main_cards = len(cards)
     for i,card in enumerate(cards):
-        name     = card['name']
-        set      = card['set']
-        id       = card['id']
+        if card['image'] is not None: continue #don't bother with cards that were overridden
+        name    = card['name']
+        set_code = card['set_code']
+        number  = card['number']
         
         # If there's a hyphen in the set name, ignore the hyphen suffix and try to get the card by 
-        if '-' in set:
+        if '-' in set_code:
             #trim everything at & after the hyphen
-            trimmed_set = re.sub('-.*','',set)
+            trimmed_set_code = re.sub('-.*','', set_code)
             try:
-                candidates = tcg.Card.where(q='set.ptcgoCode:'+trimmed_set+' name:'+name)
+                candidates = tcg.Card.where(q='set.ptcgoCode:'+trimmed_set_code+' name:'+name)
                 api_card = None
                 for c in candidates:
-                    if c.name == name:
+                    if c.name == name and number in c.number:
                         api_card = c
-                        print("WARNING: Making best guess for '"+name+"', set '"+set+"'... It has a weird set name. Check in the final product that it's the correct card.")
+                        print("WARNING: Making best guess for '"+name+"', set '"+set_code+"'... The set was not recognized, but this guess is usually right. Verify in the final product that it's the correct card.")
                         break
                 assert(api_card is not None)
             except:
-                print("ERROR: Could not fetch card: '"+name+"', set '"+set+"'. It's got a funky set name and I couldn't get around it.")
-                printSkipWarning()
+                print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"'. Could not resolve set name.")
+                printSkipWarning(name)
                 continue
         # Otherwise, get the set ID to assemble a unique card ID
         else:
-            #If the set name is Energy, the deck just wants basic energy and does not specify a set. Use hardcoded id
-            if set == 'Energy':
+            #If the set_code is 'Energy', the deck just wants basic energy and does not specify a set. Use hardcoded id
+            if set_code == 'Energy':
                 card_id = BASIC_ENERGY[card['name']] #map basic energy using a hardcoded card id
-                card['name'] = card['name'] + ' Energy'
-            # Otherwise, try to get the API set ID
+                if 'Energy' not in name: card['name'] = card['name'] + ' Energy'
+            # Otherwise, try to get the set ID
             else:
                 try:
-                    set_id = tcg.Set.where(q='ptcgoCode:'+set)[0].id
+                    set_id = tcg.Set.where(q='ptcgoCode:'+set_code)[0].id
                 except:
-                    print("ERROR: Could not fetch card: '"+name+"', set '"+set+"'. Could not resolve set name.")
-                    return
-                card_id = set_id+'-'+id
+                    print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"'. Could not resolve set name.")
+                    printSkipWarning(name)
+                    continue
+                card_id = set_id+'-'+number
             
             # We have a card ID, get the card
             try:
                 api_card = tcg.Card.find(card_id)
             except:
-                print("ERROR: Could not fetch card: '"+name+"', set '"+set+"', id '"+card_id+"'. Could not resolve card.")
-                return
+                print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"', id '"+card_id+"'. Could not resolve card.")
+                printSkipWarning(name)
+                continue
         
         # We have a result from the API; record one of the image URLs
         if IMAGE_SIZE == 'small':
             image = api_card.images.small
-        else IMAGE_SIZE == 'large':
+        else: #IMAGE_SIZE == 'large':
             image = api_card.images.large
         card['image'] = image
             
@@ -188,25 +221,23 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
     for card in cards:
         for i in range(card['quantity']):
             urls.append(card['image'])
-            name.append(card['name'])
+            names.append(card['name'])
     
     # ====== Assemble TTS object ==============
     print("Assembling output JSON file...")
     #THIS IS WHERE THE MAGIC HAPPENS
-    deckFile.addDeck(names, urls, [BACK_URL], faceDown=True) #main deck! assume there will always be cards.
-    #deckFile = DeckFile(OUT_PATH)
+    deckFile.addDeck(names, urls, [BACK_URL], faceDown=True) # Assume there will always be cards.
     deckFile.finish()
-    #DONE
     print("Done.")
-    return DOWNLOAD_PATH
+    return # :)
 
 # ====== functions and classes ==============
 
 def cleanName(name):
-    newName = name = re.sub("&#39;", "'", name) #replace strange apostrophe encodings. may have to do this with more punctiation.
-    newName = re.sub(" ", "-", newName) #replace spaces with dashes, as this sometimes (not always) causes problems. See "Acorn Harvest")
-    newName = re.sub(",", "", newName) #remove commas. this might be causing issues in some urllib versions
-    return newName
+    new_name = name = re.sub("&#39;", "'", name) #replace strange apostrophe encodings. may have to do this with more punctiation.
+    new_name = re.sub(" ", "-", new_name) #replace spaces with dashes, as this sometimes (not always) causes problems. See "Acorn Harvest")
+    new_name = re.sub(",", "", new_name) #remove commas. this might be causing issues in some urllib versions
+    return new_name
     
 #usage: instantiate a DeckFile, giving it a file path. One can then call addDeck() any number of times, and MUST call finish to close the file.
 #All decks added will be a part of one "saved object", and all decks will be adjacent to each other when loaded in Tabletop Simulator.
