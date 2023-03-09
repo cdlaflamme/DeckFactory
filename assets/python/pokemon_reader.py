@@ -17,8 +17,8 @@ import sys #command line arguments
 
 # ===== Load environment values ===
 env = {
-    **dotenv_values('../../.env'),
-    **dotenv_values('../../.env.local'),
+    **dotenv_values('.env'),
+    **dotenv_values('.env.local'),
     **os.environ
 }
 

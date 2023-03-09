@@ -1,0 +1,3 @@
+#ignore files in this directory, other than the gitignore (which is a placeholder to add the directory)
+*
+!.gitignore

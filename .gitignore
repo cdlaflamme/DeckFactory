@@ -1,6 +1,6 @@
 # Deck files
 /assets/python/*.json
-generated/
+generated/decks/*.json
 
 #IDE files
 .idea/
