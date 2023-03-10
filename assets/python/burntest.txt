@@ -55,29 +55,3 @@ Energy: 1
 
 Total Cards: 60
 
-Code Spat Out
-
-C:\pokemondeckbuilder>pokemon_reader.exe burn.txt Burn.jsonMessage
-NOTICE: Operating without an API KEY. This is normal if you're using this tool on your own. You are limited to 30 API calls per minute, which may lead to errors if you have a deck with many unique cards.
-        If you really need to, you can reduce the number of API calls by overriding card URLs: add 'OVERRIDE https://url-to-card-image' to the end of a line in the decklist.
-Reading deck info...
-NOTICE: Skipping Line "PokÃ©mon: 17"
-NOTICE: Skipping Line "Trainer: 31"
-NOTICE: Skipping Line "Energy: 1"
-NOTICE: Skipping Line "Total Cards: 60"
-Using PokemonTCG API to get card image URLs...
-ERROR: Could not fetch card: 'Volcanion', set 'SMP'. Could not resolve set name.
-NOTICE: Skipping Volcanion
-ERROR: Could not fetch card: 'Muscle Band', set 'XY', id 'xyp-121'. Could not resolve card.
-NOTICE: Skipping Muscle Band
-ERROR: Could not fetch card: 'Professor's Letter', set 'XY', id 'xyp-123'. Could not resolve card.
-NOTICE: Skipping Professor's Letter
-ERROR: Could not fetch card: 'Evosoda', set 'XY', id 'xyp-116'. Could not resolve card.
-NOTICE: Skipping Evosoda
-Traceback (most recent call last):
-  File "pokemon_reader.py", line 355, in <module>
-  File "pokemon_reader.py", line 114, in main
-  File "pokemon_reader.py", line 208, in createDeckFile
-KeyError: 'Basic {R} Energy'
-[4472] Failed to execute script 'pokemon_reader' due to unhandled exception!
-

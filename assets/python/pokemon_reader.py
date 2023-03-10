@@ -33,7 +33,7 @@ DEFAULT_BACK_URL = 'https://images.pokemoncard.io/images/assets/CardBack.jpg'
 
 # Card ids for basic energy; ptcgo export doesn't specify basic energy sets so I'm hardcoding call of legends because I like celebi
 # Maps card names in the decklist to card ids
-BASIC_ENERGY_IDS = {
+ENERGY_NAME_TO_ID = {
     'Grass':    'col1-88',
     'Fire':     'col1-89',
     'Water':    'col1-90',
@@ -43,7 +43,7 @@ BASIC_ENERGY_IDS = {
     'Darkness': 'col1-94',
     'Metal':    'col1-95',
     'Basic {G} Energy':      'col1-88',
-    'Basic {F} Energy':      'col1-89',
+    'Basic {R} Energy':      'col1-89',
     'Basic {W} Energy':      'col1-90',
     'Basic {L} Energy':      'col1-91',
     'Basic {P} Energy':      'col1-92',
@@ -52,7 +52,7 @@ BASIC_ENERGY_IDS = {
     'Basic {M} Energy':      'col1-95'
 }
 # Maps card ids to a consistent card name for TTS
-BASIC_ENERGY_NAMES = {
+ENERGY_ID_TO_NAME = {
     'col1-88': 'Grass Energy',
     'col1-89': 'Fire Energy',
     'col1-90': 'Water Energy',
@@ -65,11 +65,10 @@ BASIC_ENERGY_NAMES = {
 
 def main():
     # ========= command line arguments =========
-    usage_string = "Usage: python pokemon_reader.py <input file> <output file> [options]\n\t\
-                    Options:\n\t\
-                    -cb [url]              : custom card back image URL\n\t\
-                    -s [small | large]     : card image size (resolution), default: large\
-                    "
+    usage_string = "Usage: python pokemon_reader.py <input file> <output file> [options]\n"\
+                    +"\tOptions:\n"\
+                    +"\t-cb [url]            : custom card back image URL\n"\
+                    +"\t-s [small | large]   : card image size (resolution), default: large\n"
     
     num_args = len(sys.argv)
     if num_args < 3:
@@ -135,7 +134,7 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
         BACK_URL = DEFAULT_BACK_URL
 
     # ====== get card names ==============
-    print("Reading deck info...")
+    print("\nReading deck info...\n")
     try:
         with open(IN_PATH, 'r') as f:
             file_content = f.read()
@@ -175,66 +174,51 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
     
     # ====== get card images ==============
     image_urls = []
-    print("Using PokemonTCG API to get card image URLs...")
+    guesses = []
+    print("\nUsing PokemonTCG API to get card image URLs...\n")
     num_main_cards = len(cards)
     for i,card in enumerate(cards):
         if card['image'] is not None: continue #don't bother with cards that were overridden
         name    = card['name']
         set_code = card['set_code']
         number  = card['number']
-        
-        # If there's a hyphen in the set name, ignore the hyphen suffix and try to get the card by 
-        if '-' in set_code:
-            #trim everything at & after the hyphen
-            trimmed_set_code = re.sub('-.*','', set_code)
-            try:
-                candidates = tcg.Card.where(q='set.ptcgoCode:'+trimmed_set_code+' name:'+name)
-                api_card = None
-                for c in candidates:
-                    if c.name == name and number in c.number:
-                        api_card = c
-                        print("WARNING: Making best guess for '"+name+"', set '"+set_code+"'... The set was not recognized, but this guess is usually right. Verify in the final product that it's the correct card.")
-                        break
-                assert(api_card is not None)
-            except:
-                print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"'. Could not resolve set name.")
-                printSkipWarning(name)
-                card['valid'] = False
-                continue
-        # Otherwise, get the set ID to assemble a unique card ID
-        else:
-            #If the set_code is 'Energy', the deck just wants basic energy and does not specify a set. Use hardcoded id
-            if set_code == 'Energy':
-                card_id = BASIC_ENERGY_IDS[card['name']] #map basic energy using a hardcoded card id
-                card['name'] = BASIC_ENERGY_NAMES[card_id]
-            # Otherwise, try to get the set ID
-            else:
-                try:
-                    set_id = tcg.Set.where(q='ptcgoCode:'+set_code)[0].id
-                except:
-                    print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"'. Could not resolve set name.")
-                    printSkipWarning(name)
-                    card['valid'] = False
-                    continue
-                card_id = set_id+'-'+number
-            
-            # We have a card ID, get the card
-            try:
+        print("CARD: Fetching image for '"+name+" "+set_code+"'.")
+        api_card = None
+        # If the set_code is 'Energy', the deck just wants basic energy and does not specify a set. Use hardcoded id
+        if set_code == 'Energy':
+            if name in ENERGY_NAME_TO_ID.keys():
+                card_id = ENERGY_NAME_TO_ID[card['name']] # Map basic energy name to id using a hardcoded card id
+                card['name'] = ENERGY_ID_TO_NAME[card_id] # Get a consistent card name from the ID; name to id relationship is many to one
                 api_card = tcg.Card.find(card_id)
-            except:
-                print("ERROR: Could not fetch card: '"+name+"', set '"+set_code+"', id '"+card_id+"'. Could not resolve card.")
+                print("ENERGY: Recognized "+card['name']+".")
+            else:
+                print("ERROR: Could not fetch '"+name+"', unknown energy format.")
                 printSkipWarning(name)
                 card['valid'] = False
                 continue
-        
-        # We have a result from the API; record one of the image URLs
-        if IMAGE_SIZE == 'small':
-            image = api_card.images.small
-        else: #IMAGE_SIZE == 'large':
-            image = api_card.images.large
-        card['image'] = image
-            
-        time.sleep(POLITENESS_DELAY)
+        # For non-energy cards, use the API
+        else:
+            # Execute a query and filter candidates
+            result = getBestCard(code=set_code, name=name, number=number)
+            if result['card'] is not None:
+                api_card = result['card']
+                if result['guess']:
+                    print("NOTICE: Made best guess. This usually does a good job, but verify the result at the end.")
+                    guesses.append((card, api_card))
+
+        # If we found no candidates, skip
+        if api_card is None:
+            print("ERROR: Could not fetch '"+name+" "+set_code+"', could not find any candidates.")
+            printSkipWarning(name)
+            card['valid'] = False
+            continue
+        elif card['valid']:
+            # We have a result from the API; record one of the image URLs
+            if IMAGE_SIZE == 'small':
+                image = api_card.images.small
+            else: #IMAGE_SIZE == 'large':
+                image = api_card.images.large
+            card['image'] = image         
     
     # ====== Convert card array to quantity-ignorant url array
     urls = []
@@ -246,20 +230,101 @@ def createDeckFile(IN_PATH, OUT_PATH, BACK_URL, IMAGE_SIZE):
                 urls.append(card['image'])
                 names.append(card['name'])
         elif hint_printed == False:
-            print('\n\nHINT: Some cards had to be skipped, so the final product will be missing some cards.\n'\
-                    +'You can try to troubleshoot the issue (usually a weird set name from PTCGO), or manually add an override by adding "OVERRIDE https://url-to-card-image" to the end of the line.\n\n'\
+            print('\nHINT: Some cards had to be skipped, so the final product will be missing some cards.\n'\
+                    +'You can try to troubleshoot the issue (usually a weird set name from PTCGO), or manually add an override by adding "OVERRIDE https://url-to-card-image" to the end of the line.'\
             )
             hint_printed = True
-    
+
     # ====== Assemble TTS object ==============
-    print("Assembling output JSON file...")
+    print("\nAssembling output JSON file...\n")
     #THIS IS WHERE THE MAGIC HAPPENS
     deckFile.addDeck(names, urls, [BACK_URL], faceDown=True) # Assume there will always be cards.
     deckFile.finish()
     print("Done.")
+    if len(guesses) > 0:
+        print("\n\nHINT: Some guesses were made, usually because of strange set codes. This is often due to promos, alts, or spinoff sets like Crown Zenith: Galarian Gallery.")
+        print("You can verify the guesses below. If any were wrong, find a correct url and provide an override, e.g. '4 Meowth SET 39 OVERRIDE https://url-to-correct-image.jpg'\n")
+        for (card_spec, api_card) in guesses:
+            print("GUESS: "+card_spec['name']+" "+card_spec['set_code']+" - "+api_card.images.small)
+        print('')
     return # :)
 
 # ====== functions and classes ==============
+
+def getBestCard(code=None, name=None, number=None):
+
+    # Execute full query
+    query = buildQuery(code, name, number)
+    result = tcg.Card.where(q=query) 
+    time.sleep(POLITENESS_DELAY)
+    second_guess = False
+
+    # If no results, trim set code and relax query
+    if len(result) == 0:
+        second_guess = True
+        code_alt = None
+        if code is not None:
+            if '-' in code:
+                # Try stripping hyphenated suffixes from code (fixes come cases, like CRZ-GG)
+                code_alt = re.sub('-.*','',code)
+            else:
+                # Try using the code as a set ID (fixes some cases, like SMP)
+                try:
+                    code_alt = tcg.Set.find(code.lower()).ptcgoCode
+                    time.sleep(POLITENESS_DELAY)
+                except:
+                    pass
+            if code_alt is not None: 
+                query = buildQuery(code=code_alt, name=name)
+                result = tcg.Card.where(q=query)
+                time.sleep(POLITENESS_DELAY)
+    
+    # If still no results, give up
+    if len(result) == 0:
+        return {
+            'card': None,
+            'success': False,
+            'guess': False
+        }
+
+    # Filter candidates
+    bestScore = 0
+    bestCard = None
+    for card in result:
+        score = 0
+        if code is not None and code == card.set.ptcgoCode: score += 1
+        if name is not None and name == card.name: score += 10
+        if number is not None and digitsOnly(card.number) in digitsOnly(number): score += 1 
+        if score > bestScore:
+            bestCard = card
+            bestScore = score
+    
+    return {
+        'card': bestCard,
+        'success': bestCard is not None,
+        'guess': second_guess or len(result) > 1
+    }
+
+def buildQuery(code=None, name=None, number=None):
+    query = ''
+    name = escapeName(name)
+    # Build a query 
+    for (attr, piece) in [('set.ptcgoCode',code), ('name', name), ('number', number)]:
+        if piece is not None: query = addQueryPiece(query, attr+':'+piece)
+    return query 
+
+def addQueryPiece(q,p):
+    if q != '':
+        q += ' '
+    q += p
+    return q
+
+def digitsOnly(s):
+    return re.sub('[^\d]','',s)
+
+def escapeName(name):
+    new_name = name
+    new_name = re.sub('([&\s])', '\\\\\\1', new_name) #escape various characters (wowee)
 
 def cleanName(name):
     new_name = name = re.sub("&#39;", "'", name) #replace strange apostrophe encodings. may have to do this with more punctiation.

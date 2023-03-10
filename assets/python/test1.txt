@@ -11,7 +11,7 @@ Pokémon: 8
 Trainer: 14
 4 Battle VIP Pass FST 225
 4 Professor's Research CEL 23
-1 Boss's Orders SWSHALT 73 OVERRIDE https://product-images.tcgplayer.com/fit-in/874x874/213255.jpg
+1 Boss's Orders SWSHALT 73
 3 Pokégear 3.0 SSH 174
 1 Ordinary Rod SSH 171
 4 Metal Saucer SSH 170
