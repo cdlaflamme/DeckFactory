@@ -6,9 +6,9 @@
 
     <script type="javascript">
         $(document).ready(function(){
-            $("#deckStatus").on("click", function(event){
+            $("#download-field").on("click", function(event){
                 $.ajax({
-                    url:        '/_ajax/deck/{{ deckUid }}',
+                    url:        '/_ajax/deck/{{ deck.uid }}',
                     type:       'POST',
                     dataType:   'json',
                     async:      true,
@@ -18,25 +18,18 @@
                         let jobStatusName = 'Unknown (an error occurred)';
                         let downloadLink = '';
                         switch (jobStatus) {
-                            case 0: // Not started
+                            case {{ deck.JOB_UNSTARTED }}: // Not started
                                 jobStatusName = 'Not started';
                                 break;
-                            case 1: // Started
+                            case {{ deck.JOB_STARTED }}: // Started
                                 jobStatusName = 'Started';
                                 break;
-                            case 2: // Complete
+                            case {{  deck.JOB_SUCCESSFUL }}: // Complete
                                 jobStatusName = 'Complete';
+                                downloadLink = {{ deck.getLocalFilename() }}
+                                $(this).html('<a href="#">Download Deck</a>');
+                                $(this).attr('href',downloadLink);
                                 break;
-                        }
-                        // TODO alter html with job status
-                        // add download link/auto-downloading anchor if complete
-                        for(i = 0; i < data.length; i++) {
-                            student = data[i];
-                            var e = $('<tr><td id = "name"></td><td id = "address"></td></tr>');
-
-                            $('#name', e).html(student['name']);
-                            $('#address', e).html(student['address']);
-                            $('#student').append(e);
                         }
                     },
                     error : function(xhr, textStatus, errorThrown) {
@@ -48,25 +41,6 @@
     </script>
 {% endblock %}
 
-{% block stylesheets %}
-    <style>
-        .table { border-collapse: collapse; }
-        .table th, td {
-            border-bottom: 1px solid #ddd;
-            width: 250px;
-            text-align: left;
-            align: left;
-        }
-    </style>
-{% endblock %}
-
 {% block body %}
-{#    TODO change this #}
-    <a id = "loadstudent" href = "#">Load student information</a>
-    </br>
-    </br>
-
-    <table class = "table">
-        <tbody id = "student"></tbody>
-    </table>
+    <p id="download-field">Test</p>
 {% endblock %}

@@ -6,7 +6,6 @@ namespace App\Controller;
 use App\Event\DeckCreatedEvent;
 use App\Repository\DeckRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,11 +13,12 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\Deck;
 use App\Form\DeckType;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class DeckController extends AbstractController
 {
     #[Route('/', name: 'deck.new')]
-    public function newDeckAction(Request $request, EntityManagerInterface $entityManager, EventDispatcher $dispatcher): Response
+    public function newDeckAction(Request $request, EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher): Response
     {
         // Create and init a deck object
         $deck = new Deck();
@@ -40,6 +40,7 @@ class DeckController extends AbstractController
             $deck->setUid($uid);
 
             // Persist deck info to database
+            $deck->setJobStatus(Deck::JOB_UNSTARTED);
             $entityManager->persist($deck);
             $entityManager->flush();
 
@@ -69,38 +70,31 @@ class DeckController extends AbstractController
         ]);
     }
 
-    #[Route('/_ajax/deck/{deckUid}', name: 'ajax.deck.status')]
+    #[Route('/_ajax/deck/{deckUid}', name: 'ajax.deck.job_status')]
     public function ajaxDeckStatus(Request $request, string $deckUid, DeckRepository $deckRepo){
+
+        // Fail for non-ajax requests
+        if ( !($request->isXmlHttpRequest() || $request->query->get('showJson') == 1) ) {
+            return new JsonResponse(
+                array(
+                    'status' => 'Error',
+                    'message' => 'Error'
+                ),
+                400
+            );
+        }
 
         // Get relevant deck
         $deck = $deckRepo->findOneBy(['uid' => $deckUid]);
 
-        // Process Ajax requests (called from jQuery)
-        if ($request->isXmlHttpRequest() || $request->query->get('showJson') == 1) {
-
-            $jsonData = array();
-
-            // Query table for job status, return that
-            $status = $deck->getJobStatus();
-            $jsonData['jobStatus'] = $status;
-
-            return new JsonResponse($jsonData);
-
-        }
-        // Process normal requests (renders template with jQuery)
-        else {
-            return $this->render('deck/ajax/status.html.twig', [
-                'deck' => $deck
-            ]);
-        }
-
-
-        // old comments:
-        // Given a deck ID, retrieve the necessary info
-        //TODO
-
-        // Return an exit code to tell the caller whether the deck file is ready to be downloaded
-        //TODO
-        //TODO: write the ajax request & javascript on the submitted page; I don't understand it at all right now
+        // Query table for job status, return that
+        $status = $deck->getJobStatus();
+        return new JsonResponse(
+            array(
+                'status' => 'OK',
+                'message' => $status
+            ),
+            200
+        );
     }
 }

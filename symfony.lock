@@ -271,6 +271,9 @@
             "webpack.config.js"
         ]
     },
+    "symfony/webpack-encore-bundle": {
+        "version": "v1.16.1"
+    },
     "twig/extra-bundle": {
         "version": "v3.5.1"
     }

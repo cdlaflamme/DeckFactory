@@ -3,6 +3,7 @@
 namespace App\EventListener;
 
 use App\Event\DeckCreatedEvent;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;

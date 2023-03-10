@@ -14,6 +14,12 @@ class Deck
     public const CARD_SIZE_MEDIUM = 'medium';
     public const CARD_SIZE_LARGE  = 'large';
 
+    // Constants for card sizes.
+    public const JOB_UNSTARTED  = 0;
+    public const JOB_STARTED    = 1;
+    public const JOB_INCOMPLETE = 2;
+    public const JOB_SUCCESSFUL = 3;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
