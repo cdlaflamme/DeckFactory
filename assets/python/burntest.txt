@@ -1,0 +1,83 @@
+Pokémon: 17
+1 Reshiram NXD 21
+1 Salazzle UNB 31
+1 Heatran DAA 25
+1 Volcanion SMP 179
+1 Monferno UPR 22
+1 Pyroar LOR 29
+1 Litleo LOR 28
+1 Braixen SIT 26
+1 Delphox FLI 17
+1 Heatmor SSH 26
+1 Entei BST 20
+1 Centiskorch BST 30
+1 Sizzlipede FST 47
+1 Fennekin FLI 15
+1 Infernape UPR 23
+1 Salandit DRM 13
+1 Chimchar UPR 21
+
+Trainer: 31
+1 Muscle Band XY 121
+1 Professor's Letter XY 123
+1 Cynthia UPR 119
+1 Magma Basin BRS 144
+1 Fire Crystal UNB 173
+1 Quick Ball SSH 179
+1 Gladion CIN 95
+1 Escape Rope BST 125
+1 Pokémon Communication TEU 152
+1 Kindler BRS 143
+1 Battle Compressor Team Flare Gear PHF 92
+1 Rare Candy PGO 69
+1 Professor's Research CEL 23
+1 Nest Ball SUM 123
+1 Fiery Flint DRM 60
+1 Giant Hearth UNM 197
+1 Tate & Liza CES 148
+1 Lysandre AOR 78
+1 Scorched Earth FCO 110
+1 Klara CRE 145
+1 Welder UNB 189
+1 Fighting Fury Belt BKP 99
+1 Ultra Ball BRS 150
+1 Float Stone PLF 99
+1 Evosoda XY 116
+1 Switch BCR 135
+1 Town Map BCR 136
+1 Evolution Incense SSH 163
+1 Marnie SSH 169
+1 Burning Scarf RCL 155
+1 Guzma BUS 115
+
+Energy: 1
+12 Basic {R} Energy Energy 2
+
+Total Cards: 60
+
+Code Spat Out
+
+C:\pokemondeckbuilder>pokemon_reader.exe burn.txt Burn.jsonMessage
+NOTICE: Operating without an API KEY. This is normal if you're using this tool on your own. You are limited to 30 API calls per minute, which may lead to errors if you have a deck with many unique cards.
+        If you really need to, you can reduce the number of API calls by overriding card URLs: add 'OVERRIDE https://url-to-card-image' to the end of a line in the decklist.
+Reading deck info...
+NOTICE: Skipping Line "PokÃ©mon: 17"
+NOTICE: Skipping Line "Trainer: 31"
+NOTICE: Skipping Line "Energy: 1"
+NOTICE: Skipping Line "Total Cards: 60"
+Using PokemonTCG API to get card image URLs...
+ERROR: Could not fetch card: 'Volcanion', set 'SMP'. Could not resolve set name.
+NOTICE: Skipping Volcanion
+ERROR: Could not fetch card: 'Muscle Band', set 'XY', id 'xyp-121'. Could not resolve card.
+NOTICE: Skipping Muscle Band
+ERROR: Could not fetch card: 'Professor's Letter', set 'XY', id 'xyp-123'. Could not resolve card.
+NOTICE: Skipping Professor's Letter
+ERROR: Could not fetch card: 'Evosoda', set 'XY', id 'xyp-116'. Could not resolve card.
+NOTICE: Skipping Evosoda
+Traceback (most recent call last):
+  File "pokemon_reader.py", line 355, in <module>
+  File "pokemon_reader.py", line 114, in main
+  File "pokemon_reader.py", line 208, in createDeckFile
+KeyError: 'Basic {R} Energy'
+[4472] Failed to execute script 'pokemon_reader' due to unhandled exception!
+
