@@ -28,7 +28,6 @@
 		<p>Job Status: <span id="job-status">Unchecked</span></p>
 		<div id="download-field"
 			 data-ajax-path = "{{ path('ajax.deck.status', {deckUid: deck.uid}) }}"
-			 data-download-link = "{{ deck.getLocalFilename() }}"
 			 data-filename = "{{ deck.getFinalFilename() }}"
 		>
 		</div>

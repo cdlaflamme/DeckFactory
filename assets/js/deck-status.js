@@ -1,11 +1,11 @@
+let intervalId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Hello world!");
 
     getDeckStatus();
+    intervalId = setInterval(getDeckStatus, 5000);
 });
-
-setInterval(getDeckStatus, 5000);
 
 // https://code.tutsplus.com/articles/create-a-javascript-ajax-post-request-with-and-without-jquery--cms-39195
 function getDeckStatus(){
@@ -35,10 +35,11 @@ function getDeckStatus(){
                 break;
             case 3: // Successful
                 jobStatusName = 'Complete';
-                let downloadLink = downloadField.dataset.downloadLink;
                 let filename = downloadField.dataset.filename;
                 // Template string for sprintf-like functionality; requires JS 6+
-                downloadField.innerHTML = `<a href="download" download="${filename}" target="_blank">Download Deck</a>`;
+                downloadField.innerHTML = `<a id="download-link" href="download" download="${filename}" target="_blank">Download Deck</a>`;
+                document.getElementById('download-link').click(); // Auto-start the download
+                clearInterval(intervalId);
                 break;
         }
         document.getElementById('job-status').innerText = jobStatusName;
