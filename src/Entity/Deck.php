@@ -83,7 +83,7 @@ class Deck
 
     public function getLocalFilename(): ?string
     {
-        return 'generated/decks/'.$this->uid.'.json';
+        return $this->uid.'.json';
     }
 
     public function getFinalFilename(): string
@@ -98,9 +98,12 @@ class Deck
      */
     private function cleanFilename(string $name) : string
     {
+        // Initialize cleanName so cleaning steps can be reordered easily
+        $cleanName = $name;
+
         // Clean up the name (pls don't relative path me user-san)
         // from https://www.codexworld.com/how-to/clean-up-filename-string-to-make-url-and-filename-safe-using-php/
-        $cleanName = pathinfo($name, PATHINFO_FILENAME);
+        $cleanName = pathinfo($cleanName, PATHINFO_FILENAME);
         // 1. Replaces all spaces with hyphens.
         $cleanName = str_replace(' ', '-', $cleanName);
         // 2. Removes special chars.
@@ -108,7 +111,7 @@ class Deck
         // 3. Replaces multiple hyphens with single one.
         $cleanName = preg_replace('/-+/', '-', $cleanName);
 
-        $this->name = $cleanName;
+        return $cleanName;
     }
 
     public function getUid(): ?string

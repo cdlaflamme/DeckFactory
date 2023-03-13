@@ -4,8 +4,12 @@
 namespace App\Controller;
 
 use App\Event\DeckCreatedEvent;
+use App\Kernel;
 use App\Repository\DeckRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +21,13 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class DeckController extends AbstractController
 {
+
+    protected string $deckDirectoryPath; // Path to generated deck files. Provided by services.yaml
+
+    public function __construct(Kernel $kernel){
+        $this->deckDirectoryPath = $kernel->getProjectDir().'/generated/decks/';
+    }
+
     #[Route('/', name: 'deck.new')]
     public function newDeckAction(Request $request, EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher): Response
     {
@@ -49,7 +60,7 @@ class DeckController extends AbstractController
             $dispatcher->dispatch($event, DeckCreatedEvent::NAME);
 
             // Redirect to the 'submitted' page, passing UID and size through URL
-            return $this->redirectToRoute('deck.download', ['deckUid' => $uid]);
+            return $this->redirectToRoute('deck.status', ['deckUid' => $uid]);
         }
 
         // Render the form if not submitted
@@ -58,8 +69,8 @@ class DeckController extends AbstractController
         ]);
     }
 
-    #[Route('/deck/{deckUid}/', name: 'deck.download')]
-    public function deckDownloadAction(string $deckUid, Request $request, DeckRepository $deckRepo): Response
+    #[Route('/deck/{deckUid}/', name: 'deck.status')]
+    public function deckStatusAction(string $deckUid, Request $request, DeckRepository $deckRepo): Response
     {
         // Retrieve the deck object to get relevant information
         $deck = $deckRepo->findOneBy(['uid' => $deckUid]);
@@ -70,15 +81,31 @@ class DeckController extends AbstractController
         ]);
     }
 
-    #[Route('/_ajax/deck/{deckUid}', name: 'ajax.deck.job_status')]
-    public function ajaxDeckStatus(Request $request, string $deckUid, DeckRepository $deckRepo){
+    #[Route('/deck/{deckUid}/download', name: 'deck.download')]
+    public function deckDownloadAction(string $deckUid, DeckRepository $deckRepo): ?BinaryFileResponse {
+        // Retrieve the deck object to get relevant information
+        $deck = $deckRepo->findOneBy(['uid' => $deckUid]);
+        $filePath = self::getDeckFilePath($deck);
+
+        try {
+            // Create a File object for assembly
+            $fileObject = new File($filePath);
+            // Return the file
+            return $this->file($fileObject, $deck->getFinalFilename());
+        }
+        catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    #[Route('/_ajax/deck/{deckUid}', name: 'ajax.deck.status')]
+    public function ajaxDeckStatus(Request $request, string $deckUid, DeckRepository $deckRepo): JsonResponse {
 
         // Fail for non-ajax requests
         if ( !($request->isXmlHttpRequest() || $request->query->get('showJson') == 1) ) {
             return new JsonResponse(
                 array(
-                    'status' => 'Error',
-                    'message' => 'Error'
+                    'jobStatus' => null
                 ),
                 400
             );
@@ -87,14 +114,22 @@ class DeckController extends AbstractController
         // Get relevant deck
         $deck = $deckRepo->findOneBy(['uid' => $deckUid]);
 
-        // Query table for job status, return that
+        // Query table for job status
         $status = $deck->getJobStatus();
+
+        $downloadUrl = $deck->getLocalFilename();
+
+        // Return job status
         return new JsonResponse(
             array(
-                'status' => 'OK',
-                'message' => $status
+                'jobStatus' => $status,
+                'downloadUrl' => $downloadUrl
             ),
             200
         );
+    }
+
+    private function getDeckFilePath(Deck $deck): string {
+        return $this->deckDirectoryPath . $deck->getLocalFilename();
     }
 }
