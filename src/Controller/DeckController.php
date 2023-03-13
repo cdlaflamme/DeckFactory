@@ -5,9 +5,9 @@ namespace App\Controller;
 
 use App\Event\DeckCreatedEvent;
 use App\Kernel;
+use App\Persistence\DeckManager;
 use App\Repository\DeckRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use JetBrains\PhpStorm\Pure;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,15 +21,27 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class DeckController extends AbstractController
 {
+    /**
+     * @var DeckManager
+     */
+    protected DeckManager $deckManager;
 
-    protected string $deckDirectoryPath; // Path to generated deck files. Provided by services.yaml
-
-    public function __construct(Kernel $kernel){
-        $this->deckDirectoryPath = $kernel->getProjectDir().'/generated/decks/';
+    /**
+     * @param DeckManager $deckManager
+     */
+    public function __construct(DeckManager $deckManager){
+        $this->deckManager = $deckManager;
     }
 
+    /**
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param EventDispatcherInterface $dispatcher
+     *
+     * @return Response
+     */
     #[Route('/', name: 'deck.new')]
-    public function newDeckAction(Request $request, EntityManagerInterface $entityManager, EventDispatcherInterface $dispatcher): Response
+    public function newDeckAction(Request $request): Response
     {
         // Create and init a deck object
         $deck = new Deck();
@@ -43,24 +55,14 @@ class DeckController extends AbstractController
         // Handle submitted forms
         if ($form->isSubmitted() && $form->isValid()) {
 
-            // Get deck information; the original deck object is also updated
-            $size = $form->get('imageSize');
+            // Get un-mapped deck information; the original deck object has been updated but does not hold unmapped info
+            $size = $form->get('imageSize')->getData();
 
-            // Generate uid for the deck
-            $uid = uniqid();
-            $deck->setUid($uid);
-
-            // Persist deck info to database
-            $deck->setJobStatus(Deck::JOB_UNSTARTED);
-            $entityManager->persist($deck);
-            $entityManager->flush();
-
-            // Start deck file creation job
-            $event = new DeckCreatedEvent($deck);
-            $dispatcher->dispatch($event, DeckCreatedEvent::NAME);
+            // Perform all deck creation tasks (persistence, events, file creation jobs, etc.)
+            $this->deckManager->createDeck($deck, $size);
 
             // Redirect to the 'submitted' page, passing UID and size through URL
-            return $this->redirectToRoute('deck.status', ['deckUid' => $uid]);
+            return $this->redirectToRoute('deck.status', ['deckUid' => $deck->getUid()]);
         }
 
         // Render the form if not submitted
@@ -69,6 +71,13 @@ class DeckController extends AbstractController
         ]);
     }
 
+    /**
+     * @param string $deckUid
+     * @param Request $request
+     * @param DeckRepository $deckRepo
+     *
+     * @return Response
+     */
     #[Route('/deck/{deckUid}/', name: 'deck.status')]
     public function deckStatusAction(string $deckUid, Request $request, DeckRepository $deckRepo): Response
     {
@@ -81,11 +90,17 @@ class DeckController extends AbstractController
         ]);
     }
 
+    /**
+     * @param string $deckUid
+     * @param DeckRepository $deckRepo
+     *
+     * @return BinaryFileResponse|null
+     */
     #[Route('/deck/{deckUid}/download', name: 'deck.download')]
     public function deckDownloadAction(string $deckUid, DeckRepository $deckRepo): ?BinaryFileResponse {
         // Retrieve the deck object to get relevant information
         $deck = $deckRepo->findOneBy(['uid' => $deckUid]);
-        $filePath = self::getDeckFilePath($deck);
+        $filePath = $this->deckManager->getDeckFilePath($deck);
 
         try {
             // Create a File object for assembly
@@ -98,6 +113,13 @@ class DeckController extends AbstractController
         }
     }
 
+    /**
+     * @param Request $request
+     * @param string $deckUid
+     * @param DeckRepository $deckRepo
+     *
+     * @return JsonResponse
+     */
     #[Route('/_ajax/deck/{deckUid}', name: 'ajax.deck.status')]
     public function ajaxDeckStatus(Request $request, string $deckUid, DeckRepository $deckRepo): JsonResponse {
 
@@ -127,9 +149,5 @@ class DeckController extends AbstractController
             ),
             200
         );
-    }
-
-    private function getDeckFilePath(Deck $deck): string {
-        return $this->deckDirectoryPath . $deck->getLocalFilename();
     }
 }

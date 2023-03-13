@@ -2,35 +2,41 @@
 
 namespace App\EventListener;
 
+use App\Entity\Deck;
 use App\Event\DeckCreatedEvent;
-use Symfony\Component\Console\Logger\ConsoleLogger;
+use App\Persistence\DeckManager;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 final class DeckCreatedListener {
 
+    protected DeckManager $deckManager;
+
+    public function __construct(DeckManager $deckManager){
+        $this->deckManager = $deckManager;
+    }
+
     #[AsEventListener]
     public function onDeckCreated(DeckCreatedEvent $event) : void {
-        // Run process to create deck file, set job status when started & completed
 
+        // Set-up
         $deck = $event->getDeck();
         $inUrl = $deck->getListUrl();
-        $outFileName = $deck->getLocalFilename();
-        $outPath = 'generated/decks/'.$outFileName;
-
-        // TODO set job status to "started"
+        $outPath = $this->deckManager->getDeckFilePath($deck);
+        $this->deckManager->setDeckJobStatus($deck, Deck::JOB_STARTED);
 
         // Run file creation job
-        $process = new Process(['python3', 'assets/python/pokemon_reader.py', $inUrl, $outPath]);
+        // TODO handle size and custom cardback url
+        $process = new Process(['python3', 'assets/python/tappedout_reader.py', $inUrl, $outPath]);
         $process->run();
 
         // Executes after the command finishes
         if (!$process->isSuccessful()) {
-            // TODO set job status to "unsuccessful"
+            $this->deckManager->setDeckJobStatus($deck, Deck::JOB_INCOMPLETE);
             throw new ProcessFailedException($process);
         }
 
-        //TODO set job status to "complete"
+        $this->deckManager->setDeckJobStatus($deck, Deck::JOB_SUCCESSFUL);
     }
 }

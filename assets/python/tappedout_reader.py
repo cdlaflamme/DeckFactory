@@ -19,10 +19,10 @@ DEFAULT_BACK_URL = 'i.imgur.com/LdOBU1I.jpg'
 
 def main():
     # ========= command line arguments =========
-    usage_string = "Usage: python tappedout_reader.py <tappedout url> <output file name/path> [options]\n\t\
-                    Options:\n\t\
-                    -cb [url]                       : custom card back image URL\
-                    -s [small | normal | large]     : card image size (up/downscaled by TTS, influences quality)"
+    usage_string = "Usage: python tappedout_reader.py <tappedout url> <output file name/path> [options]"\
+                    +"\n\nOptions:"\
+                    +"\n\t-cb [url]                       : custom card back image URL"\
+                    +"\n\t-s [small | normal | large]     : card image size (up/downscaled by TTS, influences quality)"
     
     num_args = len(sys.argv)
     if num_args < 3:
@@ -78,8 +78,6 @@ def createDeckFile(TAPPED_URL, OUT_PATH, BACK_URL, IMAGE_SIZE):
     if OUT_PATH[-5:].lower() != '.json':
         OUT_PATH = OUT_PATH+'.json'
     
-    DOWNLOAD_PATH = '../decks/'+OUT_PATH
-    OUT_PATH = '/var/www/html/decks/'+OUT_PATH
     deckFile = DeckFile(OUT_PATH)
     deckFile.start()
     
@@ -92,7 +90,8 @@ def createDeckFile(TAPPED_URL, OUT_PATH, BACK_URL, IMAGE_SIZE):
         tapped_request = Request(url=TAPPED_URL, headers=HEADERS)
         tapped_html = urlopen(tapped_request).read().decode("utf-8") #assuming utf-8 but it's fine
     except:
-        return "ERROR: Could not open tappedout URL: '"+TAPPED_URL+"'. Double check the URL. If this continues, tappedout has likely increased their ability to refuse service to bots. I'm a second class citizen :("
+        print("ERROR: Could not open tappedout URL: '"+TAPPED_URL+"'. Double check the URL. If this continues, tappedout has likely increased their ability to refuse service to bots. I'm a second class citizen :(")
+        return
     #get list of card names from tappedout. for cards present multiple times, just add the name multiple times.
     card_plates = re.findall("boardContainer-main.*?>", tapped_html) #"plates" as in nameplates; getting unique strings from HTML for each card
     card_indices = [tapped_html.find(plate) for plate in card_plates] #locate each unique card in the page
@@ -124,7 +123,8 @@ def createDeckFile(TAPPED_URL, OUT_PATH, BACK_URL, IMAGE_SIZE):
         try:
             sf_html = urlopen(sf_url).read().decode("utf-8") #the scryfall API ONLY uses utf-8, so we're not just assuming it here
         except:
-            return "ERROR: Could not fetch card: '"+name+"', URL: '"+sf_url+"'. Sometimes a card is spelled wrong in the tappedout list, or maybe the card is too new. When scryfall has it, we should be able to find it."
+            print("ERROR: Could not fetch card: '"+name+"', URL: '"+sf_url+"'. Sometimes a card is spelled wrong in the tappedout list, or maybe the card is too new. When scryfall has it, we should be able to find it.")
+            return
         time.sleep(POLITENESS_DELAY) #I'm a good citizen, I promise (please disregard the comment above that might cause you to believe I'm a bad citizen)
         true_name = re.findall('"name":".*?"',sf_html)[0][8:-1]
         all_images = re.findall('"'+IMAGE_SIZE.lower()+'":".*?"',sf_html)
@@ -175,12 +175,14 @@ def createDeckFile(TAPPED_URL, OUT_PATH, BACK_URL, IMAGE_SIZE):
     deckFile.finish()
     #DONE
     print("Done.")
-    return DOWNLOAD_PATH
+    return
 
 # ====== functions and classes ==============
 
 def cleanName(name):
-    newName = name = re.sub("&#39;", "'", name) #replace strange apostrophe encodings. may have to do this with more punctiation.
+    newName = name
+    newName = name = re.sub("&#39;", "'", newName) #replace strange apostrophe encodings. may have to do this with more punctiation.
+    newName = name = re.sub("&#x27;", "'", newName) #replace strange apostrophe encodings. may have to do this with more punctiation.
     newName = re.sub(" ", "-", newName) #replace spaces with dashes, as this sometimes (not always) causes problems. See "Acorn Harvest")
     newName = re.sub(",", "", newName) #remove commas. this might be causing issues in some urllib versions
     return newName

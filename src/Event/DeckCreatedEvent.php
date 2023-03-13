@@ -7,15 +7,19 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 class DeckCreatedEvent extends Event {
 
-    public const NAME = 'deck.created';
-
     protected Deck $deck;
+    protected string $size;
 
-    public function __construct(Deck $deck){
+    public function __construct(Deck $deck, string $size = Deck::CARD_SIZE_LARGE){
         $this->deck = $deck;
+        $this->size = $size;
     }
 
     public function getDeck(): Deck{
         return $this->deck;
+    }
+
+    public function getSize(): string {
+        return $this->size;
     }
 }
